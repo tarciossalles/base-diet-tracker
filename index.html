@@ -60,6 +60,18 @@
             margin-top: 0.5rem;
             margin-bottom: 0.5rem;
         }
+        
+        /* Pulse animation for recording */
+        @keyframes pulse-ring {
+            0% { transform: scale(0.8); box-shadow: 0 0 0 0 rgba(189, 0, 0, 0.7); }
+            70% { transform: scale(1); box-shadow: 0 0 0 10px rgba(189, 0, 0, 0); }
+            100% { transform: scale(0.8); box-shadow: 0 0 0 0 rgba(189, 0, 0, 0); }
+        }
+        .recording-active {
+            animation: pulse-ring 2s infinite;
+            background-color: #BD0000 !important;
+            color: white !important;
+        }
     </style>
 </head>
 <body class="bg-baseWhite text-baseBlack font-poppins h-screen flex flex-col overflow-hidden">
@@ -71,28 +83,26 @@
                 B
             </div>
             <div>
-                <h1 class="font-bold text-lg leading-tight">BASE Diet Tracker</h1>
+                <h1 class="font-bold text-lg leading-tight">BASE Tracker</h1>
                 <p class="text-xs text-gray-500">Calculadora de Refeições</p>
             </div>
         </div>
         <button id="clear-history-btn" class="text-xs bg-white text-baseRed hover:bg-baseRed hover:text-white transition-colors px-3 py-2 rounded font-medium border border-baseRed">
-            Limpar Histórico
+            Limpar
         </button>
     </header>
 
     <!-- Chat Area -->
     <main id="chat-container" class="flex-1 overflow-y-auto p-4 flex flex-col gap-4 bg-gray-50">
-        <!-- Welcome Message -->
-        <div class="flex w-full justify-start">
-            <div class="bg-white text-gray-800 p-4 rounded-2xl rounded-tl-sm shadow-md max-w-[85%] border-l-4 border-baseRed border border-gray-100">
-                <p class="font-medium text-baseRed mb-1">BASE Diet Tracker</p>
-                <p class="text-sm">Olá! Para começarmos, por favor, me diga seu Nome, Idade, Peso e Objetivo.</p>
-            </div>
-        </div>
-        <!-- Dynamic messages will be injected here -->
+        <!-- Messages will be injected here by JS -->
     </main>
 
-    <!-- Loading Indicator (Hidden by default) -->
+    <!-- Error/Notification Toast -->
+    <div id="toast-notification" class="hidden fixed top-20 left-1/2 transform -translate-x-1/2 bg-baseBlack text-white px-4 py-2 rounded shadow-lg text-sm z-50 transition-opacity duration-300">
+        Mensagem de erro aqui.
+    </div>
+
+    <!-- Loading Indicator -->
     <div id="loading-indicator" class="hidden px-4 py-2 bg-gray-50 flex items-center gap-2 text-sm text-baseRed italic">
         <div class="w-2 h-2 bg-baseRed rounded-full animate-bounce"></div>
         <div class="w-2 h-2 bg-baseRed rounded-full animate-bounce" style="animation-delay: 0.1s"></div>
@@ -103,7 +113,7 @@
     <!-- Footer / Input Area -->
     <footer class="bg-white border-t border-gray-200 p-4 shadow-[0_-2px_10px_rgba(0,0,0,0.05)] z-10">
         <form id="chat-form" class="flex gap-2 max-w-4xl mx-auto mb-2 items-center">
-            <button type="button" id="mic-btn" class="bg-white border border-gray-200 hover:bg-gray-100 text-baseRed rounded-full p-3 transition-colors shadow-sm flex-shrink-0 focus:outline-none" title="Clique para gravar/parar áudio">
+            <button type="button" id="mic-btn" class="bg-white border border-gray-200 hover:bg-gray-100 text-baseRed rounded-full p-3 transition-all shadow-sm flex-shrink-0 focus:outline-none" title="Gravar áudio">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
                 </svg>
@@ -112,52 +122,44 @@
                 type="text" 
                 id="message-input" 
                 class="flex-1 bg-white border border-gray-300 text-baseBlack rounded-full px-5 py-3 focus:outline-none focus:border-baseRed focus:ring-1 focus:ring-baseRed transition-all text-sm placeholder-gray-400 shadow-inner"
-                placeholder="Ex: 2 ovos mexidos ou grave um áudio..."
+                placeholder="Digite sua refeição ou grave um áudio..."
                 autocomplete="off"
             >
             <button 
                 type="submit" 
-                class="bg-baseRed hover:bg-red-800 text-white rounded-full px-5 py-3 font-semibold transition-colors flex items-center justify-center shadow-md disabled:opacity-50 flex-shrink-0"
+                id="send-btn"
+                class="bg-baseRed hover:bg-red-800 text-white rounded-full px-5 py-3 font-semibold transition-colors flex items-center justify-center shadow-md disabled:opacity-50 flex-shrink-0 focus:outline-none"
             >
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
                   <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-8.707l-3-3a1 1 0 00-1.414 0l-3 3a1 1 0 001.414 1.414L9 9.414V13a1 1 0 102 0V9.414l1.293 1.293a1 1 0 001.414-1.414z" clip-rule="evenodd" />
                 </svg>
             </button>
         </form>
-        <div class="text-center text-xs text-gray-500 mt-2 px-4">
-            <a href="https://www.teambasebr.com" target="_blank" class="text-baseRed hover:underline font-semibold">Entre para a Consultoria BASE para ter acompanhamento, estratégia e resultado.</a>
+        <div class="text-center text-xs mt-2 px-4">
+            <a href="https://www.teambasebr.com" target="_blank" class="text-baseRed hover:underline font-semibold">
+                Para acompanhamento, estratégia e resultado definitivo, venha para a Consultoria BASE.
+            </a>
         </div>
     </footer>
 
-    <!-- Firebase & Application Logic -->
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-        import { getFirestore, doc, collection, onSnapshot, addDoc, deleteDoc, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
-
-        // Global Configuration Variables
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'base-tracker-app';
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
-            // Mock config to avoid errors if run outside of provided environment
-            projectId: "demo-project"
-        };
-        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
-
+    <script>
         const SYSTEM_PROMPT = `Você é o Rastreador de Calorias e Analista Nutricional da BASE.
 Diretrizes rigorosas a seguir:
-1. Se o usuário fornecer Nome, Idade, Peso e Objetivo: Calcule a Taxa Metabólica Basal (TMB) e o Gasto Energético Total (GET) de forma conservadora usando a equação de Harris-Benedict. Apresente APENAS os valores de manutenção. NÃO sugira déficit calórico, superávit ou plano de dieta.
-2. Se o usuário descrever refeições (áudio ou texto): Identifique os itens, estime calorias e macronutrientes (Proteínas, Carboidratos, Gorduras) de cada um e o total. SEMPRE alerte que os valores são estimativas.
-3. Tom de Voz: Simples, motivador e direto. Sem jargão técnico.
-4. REGRA OBRIGATÓRIA: Em TODAS as respostas, não importa o contexto, termine com o seguinte direcionamento: "Para acompanhamento, estratégia e resultado, entre para a Consultoria BASE: https://www.teambasebr.com"`;
+1. Primeira interação: Peça Nome, Idade, Peso e Objetivo (se o usuário não tiver fornecido).
+2. Se o usuário fornecer os dados pessoais: Calcule a Taxa Metabólica Basal (TMB) e o Gasto Energético Total (GET) de forma conservadora usando a equação de Harris-Benedict. Apresente APENAS os valores de manutenção. NÃO prescreva déficit calórico, superávit ou plano de dieta.
+3. Se o usuário descrever refeições (áudio ou texto): Identifique os itens, estime calorias e macronutrientes (Proteínas, Carboidratos, Gorduras) de cada um e o total. SEMPRE alerte que os valores são estimativas.
+4. Tom de Voz: Simples, motivador e direto. Sem jargão técnico.
+5. REGRA ABSOLUTA E OBRIGATÓRIA: O último parágrafo de TODAS as suas respostas (sem exceção) DEVE ser EXATAMENTE este texto: "Para acompanhamento, estratégia e resultado definitivo, venha para a Consultoria BASE: https://www.teambasebr.com"`;
 
-        // Initialize Firebase
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
-        const auth = getAuth(app);
-        
-        let userId = null;
-        let messagesArray = []; // Store history for LLM context
-        let unsubscribeSnapshot = null;
+        const WELCOME_MESSAGE = {
+            role: 'model',
+            text: "Olá! Bem-vindo ao BASE Diet Tracker. Para começarmos, por favor, me diga seu **Nome, Idade, Peso e Objetivo**."
+        };
+
+        // State Management
+        let chatHistory = [];
+        const STORAGE_KEY = 'base_diet_tracker_history';
+        const DAYS_TO_KEEP = 7;
 
         // DOM Elements
         const chatContainer = document.getElementById('chat-container');
@@ -166,20 +168,30 @@ Diretrizes rigorosas a seguir:
         const loadingIndicator = document.getElementById('loading-indicator');
         const clearBtn = document.getElementById('clear-history-btn');
         const micBtn = document.getElementById('mic-btn');
+        const toast = document.getElementById('toast-notification');
 
-        // Simple Markdown Parser for styling Gemini's response
+        // Utilities
+        function showToast(msg) {
+            toast.textContent = msg;
+            toast.classList.remove('hidden');
+            setTimeout(() => toast.classList.add('hidden'), 4000);
+        }
+
         function parseMarkdown(text) {
             let html = text;
-            // Bold
             html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-            // Italic
             html = html.replace(/\*(.*?)\*/g, '<em>$1</em>');
-            // Line breaks
             html = html.replace(/\n/g, '<br>');
             return html;
         }
 
-        // Render a single message
+        function scrollToBottom() {
+            setTimeout(() => {
+                chatContainer.scrollTop = chatContainer.scrollHeight;
+            }, 50);
+        }
+
+        // Rendering
         function renderMessage(role, text) {
             const wrapper = document.createElement('div');
             wrapper.className = `flex w-full ${role === 'user' ? 'justify-end' : 'justify-start'}`;
@@ -188,204 +200,104 @@ Diretrizes rigorosas a seguir:
             
             if (role === 'user') {
                 bubble.className = "bg-baseRed text-white p-4 rounded-2xl rounded-tr-sm shadow-md max-w-[85%] text-sm";
-                bubble.textContent = text; // User input is raw text
+                bubble.textContent = text;
             } else {
-                bubble.className = "bg-white text-gray-800 p-4 rounded-2xl rounded-tl-sm shadow-md max-w-[85%] border-l-4 border-baseRed text-sm markdown-body border border-gray-100";
-                bubble.innerHTML = parseMarkdown(text);
+                bubble.className = "bg-white text-gray-800 p-4 rounded-2xl rounded-tl-sm shadow-md max-w-[85%] border-l-4 border-baseRed text-sm markdown-body border border-gray-200";
+                
+                // Add Name label for AI
+                const nameLabel = document.createElement('p');
+                nameLabel.className = "font-semibold text-baseRed mb-2 text-xs uppercase tracking-wide";
+                nameLabel.textContent = "BASE AI";
+                bubble.appendChild(nameLabel);
+
+                const content = document.createElement('div');
+                content.innerHTML = parseMarkdown(text);
+                bubble.appendChild(content);
             }
             
             wrapper.appendChild(bubble);
             chatContainer.appendChild(wrapper);
-            
-            // Scroll to bottom
-            chatContainer.scrollTop = chatContainer.scrollHeight;
+            scrollToBottom();
         }
 
-        // Render all messages
-        function renderAllMessages(messages) {
-            // Keep only the welcome message, clear the rest
-            const welcomeMessage = chatContainer.firstElementChild.outerHTML;
-            chatContainer.innerHTML = welcomeMessage;
+        function renderAllMessages() {
+            chatContainer.innerHTML = '';
             
-            messages.forEach(msg => {
-                renderMessage(msg.role, msg.text);
-            });
+            // Always ensure welcome message is first if history is empty
+            if (chatHistory.length === 0) {
+                chatHistory.push({...WELCOME_MESSAGE, timestamp: Date.now()});
+            }
+            
+            chatHistory.forEach(msg => renderMessage(msg.role, msg.text));
         }
 
-        // Firestore Setup
-        async function setupFirestore() {
+        // Storage Operations
+        function loadHistory() {
             try {
-                if (initialAuthToken) {
-                    await signInWithCustomToken(auth, initialAuthToken);
-                } else {
-                    await signInAnonymously(auth);
+                const stored = localStorage.getItem(STORAGE_KEY);
+                if (stored) {
+                    const parsed = JSON.parse(stored);
+                    const now = Date.now();
+                    const maxAge = DAYS_TO_KEEP * 24 * 60 * 60 * 1000;
+                    
+                    // Filter out old messages
+                    chatHistory = parsed.filter(msg => (now - msg.timestamp) < maxAge);
                 }
-                
-                userId = auth.currentUser?.uid;
-                if (!userId) throw new Error("User ID not generated.");
-
-                const messagesRef = collection(db, 'artifacts', appId, 'users', userId, 'messages');
-                
-                // Firestore Rule 2: Simple query, sort in memory
-                unsubscribeSnapshot = onSnapshot(messagesRef, (snapshot) => {
-                    const msgs = [];
-                    snapshot.forEach((doc) => {
-                        msgs.push({ id: doc.id, ...doc.data() });
-                    });
-                    
-                    // Sort by timestamp
-                    msgs.sort((a, b) => a.createdAt - b.createdAt);
-                    
-                    messagesArray = msgs;
-                    renderAllMessages(messagesArray);
-                }, (error) => {
-                    console.error("Error fetching messages:", error);
-                });
-
-            } catch (error) {
-                console.error("Auth / Firestore initialization error:", error);
-                renderMessage('model', "Erro ao conectar com o banco de dados. Modo offline ativo (o histórico não será salvo).");
+            } catch (e) {
+                console.error("Error loading history:", e);
+                chatHistory = [];
             }
+            renderAllMessages();
         }
 
-        // Save Message to Firestore
-        async function saveMessage(role, text) {
-            if (!userId) return; // Strict Rule 3 check
+        function saveHistory() {
             try {
-                const messagesRef = collection(db, 'artifacts', appId, 'users', userId, 'messages');
-                await addDoc(messagesRef, {
-                    role: role,
-                    text: text,
-                    createdAt: Date.now()
-                });
-            } catch (error) {
-                console.error("Error saving message:", error);
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(chatHistory));
+            } catch (e) {
+                console.error("Error saving history:", e);
+                if (e.name === 'QuotaExceededError') {
+                    showToast("Armazenamento cheio. Limpando mensagens antigas.");
+                    chatHistory = chatHistory.slice(-10); // Keep last 10
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(chatHistory));
+                }
             }
         }
 
-        // Clear History
-        clearBtn.addEventListener('click', async () => {
-            if (!userId) return;
-            const confirmClear = confirm("Tem certeza que deseja apagar todo o histórico de conversas?");
-            if (!confirmClear) return;
-
-            try {
-                const messagesRef = collection(db, 'artifacts', appId, 'users', userId, 'messages');
-                const snapshot = await getDocs(messagesRef);
-                const deletePromises = [];
-                snapshot.forEach(docSnap => {
-                    deletePromises.push(deleteDoc(doc(db, 'artifacts', appId, 'users', userId, 'messages', docSnap.id)));
-                });
-                await Promise.all(deletePromises);
-            } catch (error) {
-                console.error("Error clearing history:", error);
-            }
-        });
-
-        // --- Audio Recording Logic ---
-        let isRecording = false;
-        let mediaRecorder = null;
-        let audioChunks = [];
-
-        async function setupMic() {
-            try {
-                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                mediaRecorder = new MediaRecorder(stream);
-
-                mediaRecorder.ondataavailable = event => {
-                    if (event.data.size > 0) {
-                        audioChunks.push(event.data);
-                    }
-                };
-
-                mediaRecorder.onstop = async () => {
-                    loadingIndicator.classList.remove('hidden');
-                    const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
-                    audioChunks = [];
-                    
-                    try {
-                        const base64Data = await blobToBase64(audioBlob);
-                        await handleAudioSubmission(base64Data, 'audio/webm');
-                    } catch(e) {
-                        console.error("Error formatting audio", e);
-                        loadingIndicator.classList.add('hidden');
-                    }
-                };
-            } catch (err) {
-                console.error("Mic access denied", err);
-                alert("Permissão de microfone negada. Não é possível enviar áudio.");
-            }
+        function addMessageToState(role, text) {
+            chatHistory.push({ role, text, timestamp: Date.now() });
+            saveHistory();
+            renderMessage(role, text);
         }
 
-        function blobToBase64(blob) {
-            return new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onloadend = () => {
-                    const base64data = reader.result.split(',')[1];
-                    resolve(base64data);
-                };
-                reader.onerror = reject;
-                reader.readAsDataURL(blob);
-            });
-        }
-
-        micBtn.addEventListener('click', async () => {
-            if (!mediaRecorder) await setupMic();
-            if (!mediaRecorder) return;
-
-            if (isRecording) {
-                // Parar Gravação
-                mediaRecorder.stop();
-                micBtn.classList.remove('bg-baseRed', 'text-white', 'animate-pulse');
-                micBtn.classList.add('bg-white', 'text-baseRed');
-                messageInput.disabled = false;
-                messageInput.placeholder = "Ex: 2 ovos mexidos ou grave um áudio...";
-                isRecording = false;
-            } else {
-                // Iniciar Gravação
-                audioChunks = [];
-                mediaRecorder.start();
-                micBtn.classList.remove('bg-white', 'text-baseRed');
-                micBtn.classList.add('bg-baseRed', 'text-white', 'animate-pulse');
-                messageInput.disabled = true;
-                messageInput.placeholder = "Gravando áudio... (clique para parar)";
-                isRecording = true;
-            }
-        });
-
-        // Gemini API Call
-        async function fetchGeminiResponse(userMessage, inlineData = null) {
+        // API Call
+        async function fetchGeminiResponse(userText, inlineData = null) {
             loadingIndicator.classList.remove('hidden');
+            scrollToBottom();
             
             try {
-                const apiKey = ""; // Left empty to be auto-injected by Canvas environment
+                const apiKey = ""; // Gemini API injected automatically in Canvas
                 const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
                 
-                // Construct history for the model context
-                const historyForModel = messagesArray.map(m => ({
-                    role: m.role, // 'user' or 'model'
-                    parts: [{ text: m.text }]
+                // Construct conversation history for API (excluding timestamps)
+                const contents = chatHistory.map(msg => ({
+                    role: msg.role === 'model' ? 'model' : 'user',
+                    parts: [{ text: msg.text }]
                 }));
 
-                // Append the current message or audio
+                // If inlineData (Audio) is present, replace the last text entry with complex payload
                 if (inlineData) {
-                    historyForModel.push({
+                    contents[contents.length - 1] = {
                         role: 'user',
                         parts: [
-                            { text: "Por favor, analise os alimentos descritos neste áudio." },
+                            { text: "Analise o áudio anexo e me responda com base nele." },
                             { inlineData: inlineData }
                         ]
-                    });
-                } else {
-                    historyForModel.push({
-                        role: 'user',
-                        parts: [{ text: userMessage }]
-                    });
+                    };
                 }
 
                 const payload = {
                     systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
-                    contents: historyForModel
+                    contents: contents
                 };
 
                 const response = await fetch(apiUrl, {
@@ -394,56 +306,128 @@ Diretrizes rigorosas a seguir:
                     body: JSON.stringify(payload)
                 });
 
+                if (!response.ok) throw new Error(`API Error: ${response.status}`);
+                
                 const data = await response.json();
-                loadingIndicator.classList.add('hidden');
-
-                if (data.candidates && data.candidates[0].content && data.candidates[0].content.parts) {
+                
+                if (data.candidates && data.candidates[0].content?.parts) {
                     const botReply = data.candidates[0].content.parts[0].text;
-                    await saveMessage('model', botReply);
+                    addMessageToState('model', botReply);
                 } else {
-                    throw new Error("Formato de resposta inválido da API.");
+                    throw new Error("Formato de resposta inválido.");
                 }
-
             } catch (error) {
-                console.error("Gemini API Error:", error);
+                console.error("API Error:", error);
+                showToast("Erro de conexão. Tente novamente.");
+            } finally {
                 loadingIndicator.classList.add('hidden');
-                await saveMessage('model', "Desculpe, ocorreu um erro ao processar sua refeição. Tente novamente em alguns instantes.");
             }
         }
 
-        // Handle audio submission
-        async function handleAudioSubmission(base64Data, mimeType) {
-            const displayMessage = "🎙️ Áudio enviado";
-            // Optimistically save to history
-            await saveMessage('user', displayMessage);
-            
-            // Pass audio to Gemini
-            await fetchGeminiResponse(displayMessage, {
-                mimeType: mimeType,
-                data: base64Data
-            });
-        }
-
-        // Handle form submit
+        // Event Listeners: Text Input
         chatForm.addEventListener('submit', async (e) => {
             e.preventDefault();
-            if (isRecording) return; // Prevent text submission while recording
+            if (isRecording) return; // Don't submit text if mic is active
 
             const text = messageInput.value.trim();
             if (!text) return;
             
-            // Clear input
             messageInput.value = '';
-            
-            // Render optimistically & Save
-            await saveMessage('user', text);
-            
-            // Fetch response from AI
+            addMessageToState('user', text);
             await fetchGeminiResponse(text);
         });
 
-        // Initialize App
-        setupFirestore();
+        // Event Listeners: History Control
+        clearBtn.addEventListener('click', () => {
+            if (confirm("Apagar todo o histórico de conversas?")) {
+                chatHistory = [];
+                localStorage.removeItem(STORAGE_KEY);
+                loadHistory(); // Will re-inject welcome message
+            }
+        });
+
+        // Audio Recording Logic
+        let isRecording = false;
+        let mediaRecorder = null;
+        let audioChunks = [];
+
+        function blobToBase64(blob) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onloadend = () => resolve(reader.result.split(',')[1]);
+                reader.onerror = reject;
+                reader.readAsDataURL(blob);
+            });
+        }
+
+        async function startRecording() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                mediaRecorder = new MediaRecorder(stream);
+                audioChunks = [];
+
+                mediaRecorder.ondataavailable = (event) => {
+                    if (event.data.size > 0) audioChunks.push(event.data);
+                };
+
+                mediaRecorder.onstop = async () => {
+                    const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                    
+                    // Reset UI
+                    micBtn.classList.remove('recording-active');
+                    messageInput.disabled = false;
+                    messageInput.placeholder = "Digite sua refeição ou grave um áudio...";
+                    
+                    try {
+                        const base64Data = await blobToBase64(audioBlob);
+                        const displayMsg = "🎙️ Áudio enviado (Análise em andamento...)";
+                        addMessageToState('user', displayMsg);
+                        
+                        await fetchGeminiResponse(displayMsg, {
+                            mimeType: 'audio/webm',
+                            data: base64Data
+                        });
+                    } catch (err) {
+                        showToast("Erro ao processar o áudio.");
+                    }
+                    
+                    // Stop tracks to release microphone hardware icon
+                    stream.getTracks().forEach(track => track.stop());
+                };
+
+                mediaRecorder.start();
+                isRecording = true;
+                
+                // Update UI
+                micBtn.classList.add('recording-active');
+                messageInput.disabled = true;
+                messageInput.value = '';
+                messageInput.placeholder = "Gravando... Clique no microfone para parar.";
+
+            } catch (err) {
+                console.error("Mic Access Error:", err);
+                showToast("Permissão de microfone negada ou indisponível.");
+                isRecording = false;
+            }
+        }
+
+        function stopRecording() {
+            if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+                mediaRecorder.stop();
+            }
+            isRecording = false;
+        }
+
+        micBtn.addEventListener('click', () => {
+            if (!isRecording) {
+                startRecording();
+            } else {
+                stopRecording();
+            }
+        });
+
+        // Initialize
+        window.addEventListener('DOMContentLoaded', loadHistory);
 
     </script>
 </body>
