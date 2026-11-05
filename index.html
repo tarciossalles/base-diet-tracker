@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BASE Diet Tracker - Calculadora de Refeições</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts: Poppins -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        poppins: ['Poppins', 'sans-serif'],
+                    },
+                    colors: {
+                        baseRed: '#BD0000',
+                        baseBlack: '#000000',
+                        baseWhite: '#FFFFFF',
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* Custom scrollbar for chat */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #BD0000;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #a00000;
+        }
+        
+        .markdown-body strong {
+            font-weight: 600;
+            color: #BD0000;
+        }
+        .markdown-body br {
+            display: block;
+            margin-bottom: 0.5em;
+        }
+        .markdown-body ul {
+            list-style-type: disc;
+            padding-left: 1.5rem;
+            margin-top: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+    </style>
+</head>
+<body class="bg-baseWhite text-baseBlack font-poppins h-screen flex flex-col overflow-hidden">
+
+    <!-- Header -->
+    <header class="bg-white text-baseRed p-4 shadow-md border-b-4 border-baseRed flex justify-between items-center z-10">
+        <div class="flex items-center gap-3">
+            <div class="w-10 h-10 bg-baseRed text-white rounded flex items-center justify-center font-bold text-xl tracking-wider">
+                B
+            </div>
+            <div>
+                <h1 class="font-bold text-lg leading-tight">BASE Diet Tracker</h1>
+                <p class="text-xs text-gray-500">Calculadora de Refeições</p>
+            </div>
+        </div>
+        <button id="clear-history-btn" class="text-xs bg-white text-baseRed hover:bg-baseRed hover:text-white transition-colors px-3 py-2 rounded font-medium border border-baseRed">
+            Limpar Histórico
+        </button>
+    </header>
+
+    <!-- Chat Area -->
+    <main id="chat-container" class="flex-1 overflow-y-auto p-4 flex flex-col gap-4 bg-gray-50">
+        <!-- Welcome Message -->
+        <div class="flex w-full justify-start">
+            <div class="bg-white text-gray-800 p-4 rounded-2xl rounded-tl-sm shadow-md max-w-[85%] border-l-4 border-baseRed border border-gray-100">
+                <p class="font-medium text-baseRed mb-1">BASE Diet Tracker</p>
+                <p class="text-sm">Olá! Para começarmos, por favor, me diga seu Nome, Idade, Peso e Objetivo.</p>
+            </div>
+        </div>
+        <!-- Dynamic messages will be injected here -->
+    </main>
+
+    <!-- Loading Indicator (Hidden by default) -->
+    <div id="loading-indicator" class="hidden px-4 py-2 bg-gray-50 flex items-center gap-2 text-sm text-baseRed italic">
+        <div class="w-2 h-2 bg-baseRed rounded-full animate-bounce"></div>
+        <div class="w-2 h-2 bg-baseRed rounded-full animate-bounce" style="animation-delay: 0.1s"></div>
+        <div class="w-2 h-2 bg-baseRed rounded-full animate-bounce" style="animation-delay: 0.2s"></div>
+        <span>Analisando...</span>
+    </div>
+
+    <!-- Footer / Input Area -->
+    <footer class="bg-white border-t border-gray-200 p-4 shadow-[0_-2px_10px_rgba(0,0,0,0.05)] z-10">
+        <form id="chat-form" class="flex gap-2 max-w-4xl mx-auto mb-2 items-center">
+            <button type="button" id="mic-btn" class="bg-white border border-gray-200 hover:bg-gray-100 text-baseRed rounded-full p-3 transition-colors shadow-sm flex-shrink-0 focus:outline-none" title="Clique para gravar/parar áudio">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                </svg>
+            </button>
+            <input 
+                type="text" 
+                id="message-input" 
+                class="flex-1 bg-white border border-gray-300 text-baseBlack rounded-full px-5 py-3 focus:outline-none focus:border-baseRed focus:ring-1 focus:ring-baseRed transition-all text-sm placeholder-gray-400 shadow-inner"
+                placeholder="Ex: 2 ovos mexidos ou grave um áudio..."
+                autocomplete="off"
+            >
+            <button 
+                type="submit" 
+                class="bg-baseRed hover:bg-red-800 text-white rounded-full px-5 py-3 font-semibold transition-colors flex items-center justify-center shadow-md disabled:opacity-50 flex-shrink-0"
+            >
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                  <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-8.707l-3-3a1 1 0 00-1.414 0l-3 3a1 1 0 001.414 1.414L9 9.414V13a1 1 0 102 0V9.414l1.293 1.293a1 1 0 001.414-1.414z" clip-rule="evenodd" />
+                </svg>
+            </button>
+        </form>
+        <div class="text-center text-xs text-gray-500 mt-2 px-4">
+            <a href="https://www.teambasebr.com" target="_blank" class="text-baseRed hover:underline font-semibold">Entre para a Consultoria BASE para ter acompanhamento, estratégia e resultado.</a>
+        </div>
+    </footer>
+
+    <!-- Firebase & Application Logic -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, collection, onSnapshot, addDoc, deleteDoc, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        // Global Configuration Variables
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'base-tracker-app';
+        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
+            // Mock config to avoid errors if run outside of provided environment
+            projectId: "demo-project"
+        };
+        const initialAuthToken = typeof __initial_auth_token !== 'undefined' ? __initial_auth_token : null;
+
+        const SYSTEM_PROMPT = `Você é o Rastreador de Calorias e Analista Nutricional da BASE.
+Diretrizes rigorosas a seguir:
+1. Se o usuário fornecer Nome, Idade, Peso e Objetivo: Calcule a Taxa Metabólica Basal (TMB) e o Gasto Energético Total (GET) de forma conservadora usando a equação de Harris-Benedict. Apresente APENAS os valores de manutenção. NÃO sugira déficit calórico, superávit ou plano de dieta.
+2. Se o usuário descrever refeições (áudio ou texto): Identifique os itens, estime calorias e macronutrientes (Proteínas, Carboidratos, Gorduras) de cada um e o total. SEMPRE alerte que os valores são estimativas.
+3. Tom de Voz: Simples, motivador e direto. Sem jargão técnico.
+4. REGRA OBRIGATÓRIA: Em TODAS as respostas, não importa o contexto, termine com o seguinte direcionamento: "Para acompanhamento, estratégia e resultado, entre para a Consultoria BASE: https://www.teambasebr.com"`;
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+        
+        let userId = null;
+        let messagesArray = []; // Store history for LLM context
+        let unsubscribeSnapshot = null;
+
+        // DOM Elements
+        const chatContainer = document.getElementById('chat-container');
+        const chatForm = document.getElementById('chat-form');
+        const messageInput = document.getElementById('message-input');
+        const loadingIndicator = document.getElementById('loading-indicator');
+        const clearBtn = document.getElementById('clear-history-btn');
+        const micBtn = document.getElementById('mic-btn');
+
+        // Simple Markdown Parser for styling Gemini's response
+        function parseMarkdown(text) {
+            let html = text;
+            // Bold
+            html = html.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+            // Italic
+            html = html.replace(/\*(.*?)\*/g, '<em>$1</em>');
+            // Line breaks
+            html = html.replace(/\n/g, '<br>');
+            return html;
+        }
+
+        // Render a single message
+        function renderMessage(role, text) {
+            const wrapper = document.createElement('div');
+            wrapper.className = `flex w-full ${role === 'user' ? 'justify-end' : 'justify-start'}`;
+            
+            const bubble = document.createElement('div');
+            
+            if (role === 'user') {
+                bubble.className = "bg-baseRed text-white p-4 rounded-2xl rounded-tr-sm shadow-md max-w-[85%] text-sm";
+                bubble.textContent = text; // User input is raw text
+            } else {
+                bubble.className = "bg-white text-gray-800 p-4 rounded-2xl rounded-tl-sm shadow-md max-w-[85%] border-l-4 border-baseRed text-sm markdown-body border border-gray-100";
+                bubble.innerHTML = parseMarkdown(text);
+            }
+            
+            wrapper.appendChild(bubble);
+            chatContainer.appendChild(wrapper);
+            
+            // Scroll to bottom
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+        }
+
+        // Render all messages
+        function renderAllMessages(messages) {
+            // Keep only the welcome message, clear the rest
+            const welcomeMessage = chatContainer.firstElementChild.outerHTML;
+            chatContainer.innerHTML = welcomeMessage;
+            
+            messages.forEach(msg => {
+                renderMessage(msg.role, msg.text);
+            });
+        }
+
+        // Firestore Setup
+        async function setupFirestore() {
+            try {
+                if (initialAuthToken) {
+                    await signInWithCustomToken(auth, initialAuthToken);
+                } else {
+                    await signInAnonymously(auth);
+                }
+                
+                userId = auth.currentUser?.uid;
+                if (!userId) throw new Error("User ID not generated.");
+
+                const messagesRef = collection(db, 'artifacts', appId, 'users', userId, 'messages');
+                
+                // Firestore Rule 2: Simple query, sort in memory
+                unsubscribeSnapshot = onSnapshot(messagesRef, (snapshot) => {
+                    const msgs = [];
+                    snapshot.forEach((doc) => {
+                        msgs.push({ id: doc.id, ...doc.data() });
+                    });
+                    
+                    // Sort by timestamp
+                    msgs.sort((a, b) => a.createdAt - b.createdAt);
+                    
+                    messagesArray = msgs;
+                    renderAllMessages(messagesArray);
+                }, (error) => {
+                    console.error("Error fetching messages:", error);
+                });
+
+            } catch (error) {
+                console.error("Auth / Firestore initialization error:", error);
+                renderMessage('model', "Erro ao conectar com o banco de dados. Modo offline ativo (o histórico não será salvo).");
+            }
+        }
+
+        // Save Message to Firestore
+        async function saveMessage(role, text) {
+            if (!userId) return; // Strict Rule 3 check
+            try {
+                const messagesRef = collection(db, 'artifacts', appId, 'users', userId, 'messages');
+                await addDoc(messagesRef, {
+                    role: role,
+                    text: text,
+                    createdAt: Date.now()
+                });
+            } catch (error) {
+                console.error("Error saving message:", error);
+            }
+        }
+
+        // Clear History
+        clearBtn.addEventListener('click', async () => {
+            if (!userId) return;
+            const confirmClear = confirm("Tem certeza que deseja apagar todo o histórico de conversas?");
+            if (!confirmClear) return;
+
+            try {
+                const messagesRef = collection(db, 'artifacts', appId, 'users', userId, 'messages');
+                const snapshot = await getDocs(messagesRef);
+                const deletePromises = [];
+                snapshot.forEach(docSnap => {
+                    deletePromises.push(deleteDoc(doc(db, 'artifacts', appId, 'users', userId, 'messages', docSnap.id)));
+                });
+                await Promise.all(deletePromises);
+            } catch (error) {
+                console.error("Error clearing history:", error);
+            }
+        });
+
+        // --- Audio Recording Logic ---
+        let isRecording = false;
+        let mediaRecorder = null;
+        let audioChunks = [];
+
+        async function setupMic() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                mediaRecorder = new MediaRecorder(stream);
+
+                mediaRecorder.ondataavailable = event => {
+                    if (event.data.size > 0) {
+                        audioChunks.push(event.data);
+                    }
+                };
+
+                mediaRecorder.onstop = async () => {
+                    loadingIndicator.classList.remove('hidden');
+                    const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                    audioChunks = [];
+                    
+                    try {
+                        const base64Data = await blobToBase64(audioBlob);
+                        await handleAudioSubmission(base64Data, 'audio/webm');
+                    } catch(e) {
+                        console.error("Error formatting audio", e);
+                        loadingIndicator.classList.add('hidden');
+                    }
+                };
+            } catch (err) {
+                console.error("Mic access denied", err);
+                alert("Permissão de microfone negada. Não é possível enviar áudio.");
+            }
+        }
+
+        function blobToBase64(blob) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onloadend = () => {
+                    const base64data = reader.result.split(',')[1];
+                    resolve(base64data);
+                };
+                reader.onerror = reject;
+                reader.readAsDataURL(blob);
+            });
+        }
+
+        micBtn.addEventListener('click', async () => {
+            if (!mediaRecorder) await setupMic();
+            if (!mediaRecorder) return;
+
+            if (isRecording) {
+                // Parar Gravação
+                mediaRecorder.stop();
+                micBtn.classList.remove('bg-baseRed', 'text-white', 'animate-pulse');
+                micBtn.classList.add('bg-white', 'text-baseRed');
+                messageInput.disabled = false;
+                messageInput.placeholder = "Ex: 2 ovos mexidos ou grave um áudio...";
+                isRecording = false;
+            } else {
+                // Iniciar Gravação
+                audioChunks = [];
+                mediaRecorder.start();
+                micBtn.classList.remove('bg-white', 'text-baseRed');
+                micBtn.classList.add('bg-baseRed', 'text-white', 'animate-pulse');
+                messageInput.disabled = true;
+                messageInput.placeholder = "Gravando áudio... (clique para parar)";
+                isRecording = true;
+            }
+        });
+
+        // Gemini API Call
+        async function fetchGeminiResponse(userMessage, inlineData = null) {
+            loadingIndicator.classList.remove('hidden');
+            
+            try {
+                const apiKey = ""; // Left empty to be auto-injected by Canvas environment
+                const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3-flash-preview:generateContent?key=${apiKey}`;
+                
+                // Construct history for the model context
+                const historyForModel = messagesArray.map(m => ({
+                    role: m.role, // 'user' or 'model'
+                    parts: [{ text: m.text }]
+                }));
+
+                // Append the current message or audio
+                if (inlineData) {
+                    historyForModel.push({
+                        role: 'user',
+                        parts: [
+                            { text: "Por favor, analise os alimentos descritos neste áudio." },
+                            { inlineData: inlineData }
+                        ]
+                    });
+                } else {
+                    historyForModel.push({
+                        role: 'user',
+                        parts: [{ text: userMessage }]
+                    });
+                }
+
+                const payload = {
+                    systemInstruction: { parts: [{ text: SYSTEM_PROMPT }] },
+                    contents: historyForModel
+                };
+
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await response.json();
+                loadingIndicator.classList.add('hidden');
+
+                if (data.candidates && data.candidates[0].content && data.candidates[0].content.parts) {
+                    const botReply = data.candidates[0].content.parts[0].text;
+                    await saveMessage('model', botReply);
+                } else {
+                    throw new Error("Formato de resposta inválido da API.");
+                }
+
+            } catch (error) {
+                console.error("Gemini API Error:", error);
+                loadingIndicator.classList.add('hidden');
+                await saveMessage('model', "Desculpe, ocorreu um erro ao processar sua refeição. Tente novamente em alguns instantes.");
+            }
+        }
+
+        // Handle audio submission
+        async function handleAudioSubmission(base64Data, mimeType) {
+            const displayMessage = "🎙️ Áudio enviado";
+            // Optimistically save to history
+            await saveMessage('user', displayMessage);
+            
+            // Pass audio to Gemini
+            await fetchGeminiResponse(displayMessage, {
+                mimeType: mimeType,
+                data: base64Data
+            });
+        }
+
+        // Handle form submit
+        chatForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            if (isRecording) return; // Prevent text submission while recording
+
+            const text = messageInput.value.trim();
+            if (!text) return;
+            
+            // Clear input
+            messageInput.value = '';
+            
+            // Render optimistically & Save
+            await saveMessage('user', text);
+            
+            // Fetch response from AI
+            await fetchGeminiResponse(text);
+        });
+
+        // Initialize App
+        setupFirestore();
+
+    </script>
+</body>
+</html>
